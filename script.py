@@ -6,13 +6,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import sys
+
+sys.stderr = open('log.txt', 'w')
 
 
-nbr_pages = 0
-format_file =''
-editor =''
-lang = ''
-autor = ''
+from format import CustomFormatter
+
 
 proxy= {
     'http':'socks5h://127.0.0.1:9050',
@@ -20,10 +20,15 @@ proxy= {
 }
 
 tor_options  = {
+    'connection_timeout': None,
     'proxy': {
         'http': 'socks5h://127.0.0.1:9050',
         'https': 'socks5h://127.0.0.1:9050',
-    }
+        'no_proxy': 'localhost, 127.0.0.1'
+    },
+    'verify_ssl': False
+
+
 }
 
 global header 
@@ -56,40 +61,77 @@ def initBrowserDriver():
 def getMetaData(webdriver):
     listElem =  webdriver.find_elements(by=By.CLASS_NAME,value="LrzXr kno-fv wHYlTd z8gr9e")
     print(listElem)
-    global nbr_pages , format_file , editor , lang , autor
-    nbr_pages = listElem[0].text
-    format_file = listElem[1].text
-    editor = listElem[2].text
-    lang = listElem[3].text
-    autor = listElem[4].text
+
+
 
 
 driver = initBrowserDriver()
 
 # Start
 def start(link):
-    global driver
     driver.get(link)
     print("Searching For The Book - "+driver.title )
-    WebDriverWait(driver,10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+    time.sleep(2.5)
     if(driver.current_url != link):
+        print("Google Blocked Access to this ip , Retrying in 5 seconds")
+        time.sleep(5)
         return
+    # WebDriverWait(driver,5).until(lambda d: d.execute_script('return document.readyState') == 'complete')
     xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
-    condition = EC.element_to_be_clickable((By.XPATH,xpath_but))
-    WebDriverWait(driver, 30).until(condition)
-    button = driver.find_element(by=By.XPATH,value=xpath_but)
     # getMetaData(driver)
-    button.click()
-    frame_loc = "iframe[class='fuHCCc']))"
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located(By.CSS_SELECTOR, value=frame_loc))
-    driver.switch_to.frame(driver.find_element(by=By.CSS_SELECTOR,value=frame_loc))
-    time.sleep(5)
+    while True:
+        try:
+            WebDriverWait(driver,5).until(EC.presence_of_element_located((By.XPATH,xpath_but))).click()
+            print('Clicked on button to advance ! Generating Pages for This IP successfully')
+        except Exception as e:
+            pass
+        try:
+            print("loading the document !")
+            # WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'img[aria-label="Page"]:first-child')))
+            WebDriverWait(driver,10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#s7Z8Jb")))
+            print("Changing to the frame ")
+            if(len(driver.find_elements(by=By.XPATH,value="/html/body/div[1]/table")) > 0 ):
+                print("Google recognized automatic access , Retrying in 5 seconds")
+                time.sleep(2.5)
+                return           
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'img[aria-label="Page"]:first-child')))
+            print("File finally Loaded successfully")
+            time.sleep(2)
+            driver.execute_script('
+                console.log("Scraping Started !");
+                let scroll = document.getElementsByClassName("overflow-scrolling");
+                console.log(scroll);
+
+
+                let scrollCount = 0;
+                let scrollHeight = scroll[0].scrollHeight;
+                let scrollCount = 0;
+                let scrollAmount = 800;
+                let scrollInterval = "" ;
+
+
+                let movePage = function (){
+                    scrollCount += Math.floor( ( scrollAmount - 500 + 1 ) * Math.random()  + 500);
+                    if(scrollCount < scrollHeight){
+                        scroll[0].scrollBy(0,scrollAmount);
+                    }
+                    else 
+                        clearInterval(scrollInterval);
+                }
+
+                                  
+                                  ')
+            break
+        except(Exception) as e:
+            print("Error happend when scraping using this ip , Retrying in seconds")
+            print(e)
+            pass
     
 
 
 
 def main():
-    link = input('Provide the Link for Google Books Book to Scrape: ')
+    # link = input('Provide the Link for Google Books Book to Scrape: ')
     link = 'https://www.google.fr/books/edition/Ace_AWS_Certified_Solutions_Architect_As/2GPiEAAAQBAJ?hl=fr&gbpv=0'
     while(True):
         start(link)
