@@ -76,7 +76,7 @@ def rotateIp():
 def initBrowserDriver():
     rotateIp()
     options = webdriver.EdgeOptions()
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless=new")
     options.add_argument("--disable-proxy-certificate-handler")
     options.add_argument("--ignore-certificate-errors")
     driver = webdriver.Edge(
@@ -209,11 +209,9 @@ def start(link):
 
 
 def main():
-    # link = input('Provide the Link for Google Books Book to Scrape: ')
     global link , name
-    name="test"
-    link = 'https://www.google.fr/books/edition/Ace_AWS_Certified_Solutions_Architect_As/2GPiEAAAQBAJ?hl=fr&gbpv=0'
-    # name = input("Please provide the name of the Book")
+    link = input('Provide the Link for Google Books Book to Scrape: ')
+    name = input("Please provide the name of the Book")
     while True:
         start(link)
         # downloadResources(extractedLinks)
