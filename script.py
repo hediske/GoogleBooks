@@ -41,10 +41,13 @@ tor_options  = {
 
 
 def updateImages():
+    global new_links
     for image in new_links:
         r = requests.get(image)
         with open(f'{name}/{extract_pages(image)}', 'wb') as f:
             f.write(r.content)
+    new_links.clear()
+
 
 
 
@@ -73,7 +76,7 @@ def rotateIp():
 def initBrowserDriver():
     rotateIp()
     options = webdriver.EdgeOptions()
-    options.add_argument("--headless=new")
+    # options.add_argument("--headless=new")
     options.add_argument("--disable-proxy-certificate-handler")
     options.add_argument("--ignore-certificate-errors")
     driver = webdriver.Edge(
@@ -96,7 +99,6 @@ driver = initBrowserDriver()
 def start(link):
     driver.get(link)
     print("Searching For The Book - "+driver.title )
-    new_links.clear()
     try:
         xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
         WebDriverWait(driver,2).until(EC.element_to_be_clickable((By.XPATH,xpath_but))).click()
@@ -209,8 +211,9 @@ def start(link):
 def main():
     # link = input('Provide the Link for Google Books Book to Scrape: ')
     global link , name
+    name="test"
     link = 'https://www.google.fr/books/edition/Ace_AWS_Certified_Solutions_Architect_As/2GPiEAAAQBAJ?hl=fr&gbpv=0'
-    name = input("Please provide the name of the Book")
+    # name = input("Please provide the name of the Book")
     while True:
         start(link)
         # downloadResources(extractedLinks)
