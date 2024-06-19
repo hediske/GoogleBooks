@@ -11,10 +11,9 @@ from urllib.parse import urlparse, parse_qs
 import requests
 
 
-from format import CustomFormatter
-
 extracted_links = []
 pages = []
+header = None
 
 proxy= {
     'http':'socks5h://127.0.0.1:9050',
@@ -33,23 +32,22 @@ tor_options  = {
 
 }
 
-global header 
 
 
 def extract_pages(url_st):
+    global header
     if(url_st):
         url = urlparse(url_st)
         query_params = parse_qs(url.query)
-        return query_params.get("pg", [""])[0]
+        header =  query_params.get("pg", [""])[0]
 
 
 def randomiseUserAgent():
-    global header
     print('Changing the UserAgent now ! Getting new Values !')
-    header =  UserAgent().random
+    return UserAgent().random
 
 def rotateIp():
-    randomiseUserAgent()
+    header= randomiseUserAgent()
     print('Changing the Ip now ! Getting new Values !')
     with Controller.from_port(port=9051) as controller:
         controller.authenticate()
@@ -79,21 +77,23 @@ driver = initBrowserDriver()
 def start(link):
     driver.get(link)
     print("Searching For The Book - "+driver.title )
-    WebDriverWait(driver,5).until(lambda d: d.execute_script('return document.readyState') == 'complete')
-    for _ in range(3):
-        if(driver.current_url != link and driver.title.find('www.google') == -1):
-            print("Google Blocked Access to this ip , Retrying in 5 seconds")
-            time.sleep(2.5)
-            return
-        time.sleep(2.5)
 
-    
-    xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
-    getMetaData(driver)
+    #waiting for initial page loading
+    # WebDriverWait(driver,10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+
+
+    # for _ in range(3):
+    #     if(driver.current_url != link and driver.title.find('www.google') == -1):
+    #         print("Google Blocked Access to this ip , Retrying in 5 seconds")
+    #         time.sleep(2.5)
+    #         return
+    #     time.sleep(2.5)
+
 
     
     try:
-        WebDriverWait(driver,5).until(EC.presence_of_element_located((By.XPATH,xpath_but))).click()
+        xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
+        WebDriverWait(driver,2).until(EC.element_to_be_clickable((By.XPATH,xpath_but))).click()
         print('Clicked on button to advance ! Generating Pages for This IP successfully')
     except Exception as e:
         print("Error in Clicking on button to advance : Retrying again")
@@ -101,13 +101,12 @@ def start(link):
     try:
 
         print("Proceeding for File Downloading")
-
-        for _ in range(5):
+        for _ in range(10):
             try:
                 frame = driver.find_element(by=By.CSS_SELECTOR,value="#s7Z8Jb")
                 if(frame.get_attribute('src')):
                     break
-                print("Lazy Loading issue ; Repeating waiting for anote=her time ")
+                print("Lazy Loading issue ; Repeating waiting for another time ")
                 time.sleep(5)
             except:
                 time.sleep(5)
@@ -125,12 +124,13 @@ def start(link):
             try:     
                 WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, 'overflow-scrolling')))
                 break
-            except:
+            except(Exception):
+                print(Exception)
                 pass
 
         print("File finally Loaded successfully")
 
-        result = driver.execute_script('''
+        result = driver.execute_async_script('''
             console.log("Scraping Started !");
 
             let book = document.getElementById("viewport");
@@ -140,7 +140,7 @@ def start(link):
             let scroll = document.getElementsByClassName("overflow-scrolling");
             let scrollHeight = scroll[0].scrollHeight;
             let scrollCount = 0;
-            let scrollAmount = 800;
+            let scrollAmount = 1400;
             let scrollInterval = "" ;
                               
             let callback = function (mutationsList, observer) {
@@ -161,9 +161,10 @@ def start(link):
 
             let movePage = function (callback){
                 setTimeout(function() {
-                    scrollCount += Math.floor( ( scrollAmount - 50 + 1 ) * Math.random()  + 50);
+                    scrollValue = Math.floor( ( scrollAmount - 50 + 1 ) * Math.random()  + 50);
+                    scrollCount += scrollValue;
                     if(scrollCount < scrollHeight-500){
-                        scroll[0].scrollBy(0,scrollAmount);
+                        scroll[0].scrollBy(0,scrollValue);
                         movePage(callback);
                     }
                     else{
@@ -205,7 +206,7 @@ def start(link):
 def main():
     # link = input('Provide the Link for Google Books Book to Scrape: ')
     link = 'https://www.google.fr/books/edition/Ace_AWS_Certified_Solutions_Architect_As/2GPiEAAAQBAJ?hl=fr&gbpv=0'
-    while(True):
+    while True:
         start(link)
         # downloadResources(extractedLinks)
         # updateLevel()
