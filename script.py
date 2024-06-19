@@ -18,6 +18,11 @@ header = None
 link =""
 name =""
 
+def interceptor(request):
+    del request.headers['User-Agent']
+    request.headers['User-Agent'] = header
+
+
 proxy= {
     'http':'socks5h://127.0.0.1:9050',
     'https':'socks5h://127.0.0.1:9050',
@@ -31,7 +36,6 @@ tor_options  = {
         'no_proxy': 'localhost, 127.0.0.1'
     },
     'verify_ssl': False
-
 
 }
 
@@ -53,11 +57,12 @@ def extract_pages(url_st):
 
 
 def randomiseUserAgent():
+    global header
     print('Changing the UserAgent now ! Getting new Values !')
-    return UserAgent().random
+    header=  UserAgent().random
 
 def rotateIp():
-    header= randomiseUserAgent()
+    # header= randomiseUserAgent()
     print('Changing the Ip now ! Getting new Values !')
     with Controller.from_port(port=9051) as controller:
         controller.authenticate()
@@ -69,10 +74,14 @@ def initBrowserDriver():
     rotateIp()
     options = webdriver.EdgeOptions()
     options.add_argument("--headless=new")
-    return webdriver.Edge(
+    options.add_argument("--disable-proxy-certificate-handler")
+    options.add_argument("--ignore-certificate-errors")
+    driver = webdriver.Edge(
         options=options,
         seleniumwire_options=tor_options,
     )
+    driver.request_interceptor = interceptor
+    return driver
 
 def getMetaData(webdriver):
     listElem =  webdriver.find_elements(by=By.CLASS_NAME,value="LrzXr kno-fv wHYlTd z8gr9e")
@@ -87,19 +96,6 @@ driver = initBrowserDriver()
 def start(link):
     driver.get(link)
     print("Searching For The Book - "+driver.title )
-
-    #waiting for initial page loading
-    # WebDriverWait(driver,10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
-
-
-    # for _ in range(3):
-    #     if(driver.current_url != link and driver.title.find('www.google') == -1):
-    #         print("Google Blocked Access to this ip , Retrying in 5 seconds")
-    #         time.sleep(2.5)
-    #         return
-    #     time.sleep(2.5)
-
-
     new_links.clear()
     try:
         xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
@@ -119,14 +115,10 @@ def start(link):
                 print("Lazy Loading issue ; Repeating waiting for another time ")
                 time.sleep(5)
             except:
-                time.sleep(5)
-        # WebDriverWait(driver,25).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#s7Z8Jb")))
-        
+                time.sleep(5)        
         driver.switch_to.frame(frame)
         print("Switched to frame successfully")
-
         test_block = len(driver.find_elements(by=By.XPATH,value="/html/body/div[1]/table")) > 0 
-        print("You are blocked by Google : ",test_block)
         if(test_block):
             print("Google recognized automatic access , Retrying in 5 seconds")
             return      
@@ -134,16 +126,15 @@ def start(link):
             try:     
                 WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, 'overflow-scrolling')))
                 break
-            except(Exception):
-                print(Exception)
+            except:
+                print("Waiting For Data To Load")
                 pass
-
         print("File finally Loaded successfully")
         time.sleep(10)
         driver.set_script_timeout(90)
+        print("Started script execution")
         result = driver.execute_async_script('''
-            console.log("Scraping Started !");
-            var callback_final = arguments[arguments.length - 1];
+             var callback_final = arguments[arguments.length - 1];
             let book = document.getElementById("viewport");
             let observer = null;
             let targets = [];
@@ -173,13 +164,10 @@ def start(link):
 
             let movePage = function (callback){
                     scrollCount += scrollAmount;
-                     console.log(scrollCount,"vs",scrollHeight)
-                    if(scrollCount < scrollHeight){
+                     if(scrollCount < scrollHeight){
                         scroll[0].scrollBy(0,scrollAmount);
                     }
                     else{
-                        console.log("Scraping Completed !");
-                        console.log(links)
                         callback_final(links)
                         clearInterval(scrollInterval);
                         
