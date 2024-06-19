@@ -1,65 +1,10 @@
 Traceback (most recent call last):
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 1390, in getresponse
-    response.begin()
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 325, in begin
-    version, status, reason = self._read_status()
-                              ^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 286, in _read_status
-    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\socket.py", line 706, in readinto
-    return self._sock.recv_into(b)
-           ^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Users\moham\OneDrive\Documents\Projects\Google Books Hacker\script.py", line 125, in <module>
-    if(__name__=='__main__'):
-        ^^^^^^
-  File "C:\Users\moham\OneDrive\Documents\Projects\Google Books Hacker\script.py", line 117, in main
-    while(True):
-        ^^^^^^^^^
-  File "C:\Users\moham\OneDrive\Documents\Projects\Google Books Hacker\script.py", line 92, in start
-    WebDriverWait(driver,10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#s7Z8Jb")))
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\support\wait.py", line 96, in until
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\support\expected_conditions.py", line 302, in _predicate
-    driver.switch_to.frame(driver.find_element(*locator))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 741, in find_element
-    return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\webdriver.py", line 345, in execute
-    response = self.command_executor.execute(driver_command, params)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\remote_connection.py", line 302, in execute
-    return self._request(command_info[0], url, body=data)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\selenium\webdriver\remote\remote_connection.py", line 322, in _request
-    response = self._conn.request(method, url, body=body, headers=headers)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\_request_methods.py", line 144, in request
-    return self.request_encode_body(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\_request_methods.py", line 279, in request_encode_body
-    return self.urlopen(method, url, **extra_kw)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\poolmanager.py", line 443, in urlopen
-    response = conn.urlopen(method, u.request_uri, **kw)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 789, in urlopen
-    response = self._make_request(
-               ^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
-    response = conn.getresponse()
-               ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connection.py", line 464, in getresponse
-    httplib_response = super().getresponse()
-                       ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\http\client.py", line 1392, in getresponse
-    self.close()
-  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\urllib3\connection.py", line 273, in close
-    def close(self) -> None:
-
-KeyboardInterrupt
+  File "C:\Users\moham\OneDrive\Documents\Projects\Google Books Hacker\script.py", line 69, in <module>
+    driver = initBrowserDriver()
+             ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\moham\OneDrive\Documents\Projects\Google Books Hacker\script.py", line 56, in initBrowserDriver
+    return webdriver.Edge(
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\moham\AppData\Local\Programs\Python\Python311\Lib\site-packages\seleniumwire\webdriver.py", line 280, in __init__
+    super().__init__(*args, **kwargs)
+TypeError: WebDriver.__init__() got an unexpected keyword argument 'header'

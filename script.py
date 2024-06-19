@@ -6,13 +6,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import sys
+from urllib.parse import urlparse, parse_qs
 
-sys.stderr = open('log.txt', 'w')
+import requests
 
 
 from format import CustomFormatter
 
+extracted_links = []
+pages = []
 
 proxy= {
     'http':'socks5h://127.0.0.1:9050',
@@ -32,6 +34,13 @@ tor_options  = {
 }
 
 global header 
+
+
+def extract_pages(url_st):
+    if(url_st):
+        url = urlparse(url_st)
+        query_params = parse_qs(url.query)
+        return query_params.get("pg", [""])[0]
 
 
 def randomiseUserAgent():
@@ -54,7 +63,6 @@ def initBrowserDriver():
     # options.add_argument("--headless=new")
     return webdriver.Edge(
         options=options,
-        # header={'User-Agent': header},
         seleniumwire_options=tor_options,
     )
 
@@ -71,61 +79,125 @@ driver = initBrowserDriver()
 def start(link):
     driver.get(link)
     print("Searching For The Book - "+driver.title )
-    time.sleep(2.5)
-    if(driver.current_url != link):
-        print("Google Blocked Access to this ip , Retrying in 5 seconds")
-        time.sleep(5)
-        return
-    # WebDriverWait(driver,5).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+    WebDriverWait(driver,5).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+    for _ in range(3):
+        if(driver.current_url != link and driver.title.find('www.google') == -1):
+            print("Google Blocked Access to this ip , Retrying in 5 seconds")
+            time.sleep(2.5)
+            return
+        time.sleep(2.5)
+
+    
     xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
-    # getMetaData(driver)
-    while True:
-        try:
-            WebDriverWait(driver,5).until(EC.presence_of_element_located((By.XPATH,xpath_but))).click()
-            print('Clicked on button to advance ! Generating Pages for This IP successfully')
-        except Exception as e:
-            pass
-        try:
-            print("loading the document !")
-            # WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'img[aria-label="Page"]:first-child')))
-            WebDriverWait(driver,10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#s7Z8Jb")))
-            print("Changing to the frame ")
-            if(len(driver.find_elements(by=By.XPATH,value="/html/body/div[1]/table")) > 0 ):
-                print("Google recognized automatic access , Retrying in 5 seconds")
-                time.sleep(2.5)
-                return           
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'img[aria-label="Page"]:first-child')))
-            print("File finally Loaded successfully")
-            time.sleep(2)
-            driver.execute_script('
-                console.log("Scraping Started !");
-                let scroll = document.getElementsByClassName("overflow-scrolling");
-                console.log(scroll);
+    getMetaData(driver)
 
+    
+    try:
+        WebDriverWait(driver,5).until(EC.presence_of_element_located((By.XPATH,xpath_but))).click()
+        print('Clicked on button to advance ! Generating Pages for This IP successfully')
+    except Exception as e:
+        print("Error in Clicking on button to advance : Retrying again")
+        return
+    try:
 
-                let scrollCount = 0;
-                let scrollHeight = scroll[0].scrollHeight;
-                let scrollCount = 0;
-                let scrollAmount = 800;
-                let scrollInterval = "" ;
+        print("Proceeding for File Downloading")
 
+        for _ in range(5):
+            try:
+                frame = driver.find_element(by=By.CSS_SELECTOR,value="#s7Z8Jb")
+                if(frame.get_attribute('src')):
+                    break
+                print("Lazy Loading issue ; Repeating waiting for anote=her time ")
+                time.sleep(5)
+            except:
+                time.sleep(5)
+        # WebDriverWait(driver,25).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"#s7Z8Jb")))
+        
+        driver.switch_to.frame(frame)
+        print("Switched to frame successfully")
 
-                let movePage = function (){
-                    scrollCount += Math.floor( ( scrollAmount - 500 + 1 ) * Math.random()  + 500);
-                    if(scrollCount < scrollHeight){
-                        scroll[0].scrollBy(0,scrollAmount);
+        test_block = len(driver.find_elements(by=By.XPATH,value="/html/body/div[1]/table")) > 0 
+        print("You are blocked by Google : ",test_block)
+        if(test_block):
+            print("Google recognized automatic access , Retrying in 5 seconds")
+            return      
+        for _ in range(5):
+            try:     
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CLASS_NAME, 'overflow-scrolling')))
+                break
+            except:
+                pass
+
+        print("File finally Loaded successfully")
+
+        result = driver.execute_script('''
+            console.log("Scraping Started !");
+
+            let book = document.getElementById("viewport");
+            let observer = null;
+            let targets = [];
+            let links = [];
+            let scroll = document.getElementsByClassName("overflow-scrolling");
+            let scrollHeight = scroll[0].scrollHeight;
+            let scrollCount = 0;
+            let scrollAmount = 800;
+            let scrollInterval = "" ;
+                              
+            let callback = function (mutationsList, observer) {
+                for (let mutation of mutationsList) {
+                if (mutation.type == "childList") {
+                    targets = mutation.target.getElementsByTagName("img");
+
+                    if (targets) {
+                    for (let target of targets) {
+                        if(target.src!=="" && links.indexOf(target.src) == -1){
+                            links.push(target.src);}
                     }
-                    else 
-                        clearInterval(scrollInterval);
+                    }
                 }
+                }
+            };                  
+                        
 
-                                  
-                                  ')
-            break
-        except(Exception) as e:
-            print("Error happend when scraping using this ip , Retrying in seconds")
-            print(e)
-            pass
+            let movePage = function (callback){
+                setTimeout(function() {
+                    scrollCount += Math.floor( ( scrollAmount - 50 + 1 ) * Math.random()  + 50);
+                    if(scrollCount < scrollHeight-500){
+                        scroll[0].scrollBy(0,scrollAmount);
+                        movePage(callback);
+                    }
+                    else{
+                        console.log("Scraping Completed !");
+                        callback()
+                    }
+            }, Math.random()*200+400);
+            }
+                              
+            observer = new MutationObserver(callback);
+            observer.observe(book, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+            });
+        movePage(function() {
+            console.log(links); 
+            return links
+        });
+    
+                                                  
+        ''')
+        for link in result:
+            pg  = extract_pages(link)
+            if(pg is not None and pg not in pages):
+                pages.append(pg)    
+                extracted_links.append(link)
+                print(link)
+            
+
+    except(Exception) as e:
+        print("Error happend when scraping using this ip , Retrying in seconds")
+        print(e)
+        return
     
 
 
