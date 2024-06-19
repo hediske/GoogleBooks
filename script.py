@@ -11,9 +11,12 @@ from urllib.parse import urlparse, parse_qs
 import requests
 
 
-extracted_links = []
+extracted_links = set()
+new_links = set()
 pages = []
 header = None
+link =""
+name =""
 
 proxy= {
     'http':'socks5h://127.0.0.1:9050',
@@ -31,6 +34,13 @@ tor_options  = {
 
 
 }
+
+
+def updateImages():
+    for image in new_links:
+        r = requests.get(image)
+        with open(f'{name}/{extract_pages(image)}', 'wb') as f:
+            f.write(r.content)
 
 
 
@@ -58,7 +68,7 @@ def rotateIp():
 def initBrowserDriver():
     rotateIp()
     options = webdriver.EdgeOptions()
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless=new")
     return webdriver.Edge(
         options=options,
         seleniumwire_options=tor_options,
@@ -90,7 +100,7 @@ def start(link):
     #     time.sleep(2.5)
 
 
-    
+    new_links.clear()
     try:
         xpath_but = '//*[@id="main"]/div[1]/div[2]/div[1]/div/entity-page-viewport-entry/div'
         WebDriverWait(driver,2).until(EC.element_to_be_clickable((By.XPATH,xpath_but))).click()
@@ -129,10 +139,11 @@ def start(link):
                 pass
 
         print("File finally Loaded successfully")
-
+        time.sleep(10)
+        driver.set_script_timeout(90)
         result = driver.execute_async_script('''
             console.log("Scraping Started !");
-
+            var callback_final = arguments[arguments.length - 1];
             let book = document.getElementById("viewport");
             let observer = null;
             let targets = [];
@@ -140,9 +151,10 @@ def start(link):
             let scroll = document.getElementsByClassName("overflow-scrolling");
             let scrollHeight = scroll[0].scrollHeight;
             let scrollCount = 0;
-            let scrollAmount = 1400;
+            let scrollAmount = 800;
             let scrollInterval = "" ;
                               
+        
             let callback = function (mutationsList, observer) {
                 for (let mutation of mutationsList) {
                 if (mutation.type == "childList") {
@@ -160,18 +172,18 @@ def start(link):
                         
 
             let movePage = function (callback){
-                setTimeout(function() {
-                    scrollValue = Math.floor( ( scrollAmount - 50 + 1 ) * Math.random()  + 50);
-                    scrollCount += scrollValue;
-                    if(scrollCount < scrollHeight-500){
-                        scroll[0].scrollBy(0,scrollValue);
-                        movePage(callback);
+                    scrollCount += scrollAmount;
+                     console.log(scrollCount,"vs",scrollHeight)
+                    if(scrollCount < scrollHeight){
+                        scroll[0].scrollBy(0,scrollAmount);
                     }
                     else{
                         console.log("Scraping Completed !");
-                        callback()
+                        console.log(links)
+                        callback_final(links)
+                        clearInterval(scrollInterval);
+                        
                     }
-            }, Math.random()*200+400);
             }
                               
             observer = new MutationObserver(callback);
@@ -179,21 +191,24 @@ def start(link):
                 attributes: true,
                 childList: true,
                 subtree: true,
-            });
-        movePage(function() {
-            console.log(links); 
-            return links
-        });
-    
+            });          
+             scrollInterval = 500;
+            setInterval(movePage, scrollInterval); 
                                                   
         ''')
-        for link in result:
-            pg  = extract_pages(link)
-            if(pg is not None and pg not in pages):
-                pages.append(pg)    
-                extracted_links.append(link)
-                print(link)
+        try:
+            for link in result:
+                pg = extract_pages(link)
+                if pg is not None and pg not in pages:
+                    pages.append(pg)
+                    extracted_links.add(link)
+                    new_links.add(link)
+        except(e):
+            print("can not load the pages , :") 
+        
+        updateImages()
             
+                
 
     except(Exception) as e:
         print("Error happend when scraping using this ip , Retrying in seconds")
@@ -205,7 +220,9 @@ def start(link):
 
 def main():
     # link = input('Provide the Link for Google Books Book to Scrape: ')
+    global link , name
     link = 'https://www.google.fr/books/edition/Ace_AWS_Certified_Solutions_Architect_As/2GPiEAAAQBAJ?hl=fr&gbpv=0'
+    name = input("Please provide the name of the Book")
     while True:
         start(link)
         # downloadResources(extractedLinks)
