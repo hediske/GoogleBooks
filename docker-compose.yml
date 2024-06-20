@@ -8,3 +8,7 @@ services:
       - "9050:9050" # Tor proxy
       - "9051:9051" # Tor control port
       - "8118:8118" # Privoxy
+  books-scraping:
+    build: .
+    ports:
+      - "3000:3000"

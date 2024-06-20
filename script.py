@@ -75,11 +75,13 @@ def rotateIp():
 
 def initBrowserDriver():
     rotateIp()
-    options = webdriver.EdgeOptions()
+    options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
     options.add_argument("--disable-proxy-certificate-handler")
     options.add_argument("--ignore-certificate-errors")
-    driver = webdriver.Edge(
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(
         options=options,
         seleniumwire_options=tor_options,
     )
