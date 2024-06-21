@@ -9,6 +9,8 @@ services:
       - "9051:9051" # Tor control port
       - "8118:8118" # Privoxy
   books-scraping:
-    build: .
+    build:
+      dockerfile: Dockerfile
+    image: googleBooks/scraping:latest
     ports:
       - "3000:3000"
