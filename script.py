@@ -24,16 +24,16 @@ def interceptor(request):
 
 
 proxy= {
-    'http':'socks5h://127.0.0.1:9050',
-    'https':'socks5h://127.0.0.1:9050',
+    'http':'socks5h://tor-privoxy:9050',
+    'https':'socks5h://tor-privoxy:9050',
 }
 
 tor_options  = {
     'connection_timeout': None,
     'proxy': {
-        'http': 'socks5h://127.0.0.1:9050',
-        'https': 'socks5h://127.0.0.1:9050',
-        'no_proxy': 'localhost, 127.0.0.1'
+        'http': 'socks5h://tor-privoxy:9050',
+        'https': 'socks5h://tor-privoxy:9050',
+        'no_proxy': 'localhost, tor-privoxy'
     },
     'verify_ssl': False
 
@@ -67,7 +67,7 @@ def randomiseUserAgent():
 def rotateIp():
     # header= randomiseUserAgent()
     print('Changing the Ip now ! Getting new Values !')
-    with Controller.from_port(port=9051) as controller:
+    with Controller.from_port(address='tor-privoxy',port=9051) as controller:
         controller.authenticate()
         controller.signal(Signal.NEWNYM)
 
